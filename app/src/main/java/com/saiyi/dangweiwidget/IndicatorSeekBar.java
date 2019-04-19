@@ -12,6 +12,8 @@ import android.graphics.RectF;
 import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.StateListDrawable;
+import android.media.AudioManager;
+import android.media.SoundPool;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Parcelable;
@@ -126,6 +128,7 @@ public class IndicatorSeekBar extends View {
     private int mThumbTextColor;
     private boolean mHideThumb;
     private boolean mAdjustAuto;
+    private SoundPool soundPool;
 
     public IndicatorSeekBar(Context context) {
         this(context, null);
@@ -254,6 +257,13 @@ public class IndicatorSeekBar extends View {
         mBackgroundTrack = new RectF();
         initDefaultPadding();
         initIndicatorContentView();
+        //加载点击音
+        soundPool = new SoundPool(3, AudioManager.STREAM_SYSTEM, 0);
+        soundPool.load(getContext(), R.raw.music2, 1);
+    }
+
+    void playClickSound() {
+        soundPool.play(1, 1, 1, 0, 0, 1);
     }
 
     private void collectTicksInfo() {
@@ -270,7 +280,6 @@ public class IndicatorSeekBar extends View {
             for (int i = 0; i < mProgressArr.length; i++) {
                 mProgressArr[i] = mMin + i * (mMax - mMin) / ((mTicksCount - 1) > 0 ? (mTicksCount - 1) : 1);
             }
-
         }
     }
 
@@ -451,52 +460,9 @@ public class IndicatorSeekBar extends View {
 
     @Override
     protected synchronized void onDraw(Canvas canvas) {
-//        drawTrack(canvas);
         drawTickMarks(canvas);
-//        drawTickTexts(canvas);
         drawThumb(canvas);
-//        drawThumbText(canvas);
     }
-
-    /*private void drawTrack(Canvas canvas) {
-        if (mCustomTrackSectionColorResult) {//the track has custom the section track color
-            int sectionSize = mTicksCount - 1 > 0 ? mTicksCount - 1 : 1;
-            for (int i = 0; i < sectionSize; i++) {
-                if (mR2L) {
-                    mStockPaint.setColor(mSectionTrackColorArray[sectionSize - i - 1]);
-                } else {
-                    mStockPaint.setColor(mSectionTrackColorArray[i]);
-                }
-                float thumbPosFloat = getThumbPosOnTickFloat();
-                if (i < thumbPosFloat && thumbPosFloat < (i + 1)) {
-                    //the section track include the thumb,
-                    // set the ProgressTrackSize for thumb's left side track ,
-                    // BGTrackSize for the right's.
-                    float thumbCenterX = getThumbCenterX();
-                    mStockPaint.setStrokeWidth(getLeftSideTrackSize());
-                    canvas.drawLine(mTickMarksX[i], mProgressTrack.top, thumbCenterX, mProgressTrack.bottom, mStockPaint);
-                    mStockPaint.setStrokeWidth(getRightSideTrackSize());
-                    canvas.drawLine(thumbCenterX, mProgressTrack.top, mTickMarksX[i + 1], mProgressTrack.bottom, mStockPaint);
-                } else {
-                    if (i < thumbPosFloat) {
-                        mStockPaint.setStrokeWidth(getLeftSideTrackSize());
-                    } else {
-                        mStockPaint.setStrokeWidth(getRightSideTrackSize());
-                    }
-                    canvas.drawLine(mTickMarksX[i], mProgressTrack.top, mTickMarksX[i + 1], mProgressTrack.bottom, mStockPaint);
-                }
-            }
-        } else {
-            //draw progress track
-            mStockPaint.setColor(mProgressTrackColor);
-            mStockPaint.setStrokeWidth(mProgressTrackSize);
-            canvas.drawLine(mProgressTrack.left, mProgressTrack.top, mProgressTrack.right, mProgressTrack.bottom, mStockPaint);
-            //draw BG track
-            mStockPaint.setColor(mBackgroundTrackColor);
-            mStockPaint.setStrokeWidth(mBackgroundTrackSize);
-            canvas.drawLine(mBackgroundTrack.left, mBackgroundTrack.top, mBackgroundTrack.right, mBackgroundTrack.bottom, mStockPaint);
-        }
-    }*/
 
     private void drawTickMarks(Canvas canvas) {
         if (mTicksCount == 0 || (mShowTickMarksType == TickMarkType.NONE && mTickMarksDrawable == null)) {
@@ -572,38 +538,6 @@ public class IndicatorSeekBar extends View {
         }
     }
 
-    /*private void drawTickTexts(Canvas canvas) {
-        if (mTickTextsArr == null) {
-            return;
-        }
-        float thumbPosFloat = getThumbPosOnTickFloat();
-        for (int i = 0; i < mTickTextsArr.length; i++) {
-            if (mShowBothTickTextsOnly) {
-                if (i != 0 && i != mTickTextsArr.length - 1) {
-                    continue;
-                }
-            }
-            if (i == getThumbPosOnTick() && i == thumbPosFloat) {
-                mTextPaint.setColor(mHoveredTextColor);
-            } else if (i < thumbPosFloat) {
-                mTextPaint.setColor(getLeftSideTickTextsColor());
-            } else {
-                mTextPaint.setColor(getRightSideTickTextsColor());
-            }
-            int index = i;
-            if (mR2L) {
-                index = mTickTextsArr.length - i - 1;
-            }
-            if (i == 0) {
-                canvas.drawText(mTickTextsArr[index], mTextCenterX[i] + mTickTextsWidth[index] / 2.0f, mTickTextY, mTextPaint);
-            } else if (i == mTickTextsArr.length - 1) {
-                canvas.drawText(mTickTextsArr[index], mTextCenterX[i] - mTickTextsWidth[index] / 2.0f, mTickTextY, mTextPaint);
-            } else {
-                canvas.drawText(mTickTextsArr[index], mTextCenterX[i], mTickTextY, mTextPaint);
-            }
-        }
-    }*/
-
     private void drawThumb(Canvas canvas) {
         if (mHideThumb) {
             return;
@@ -633,14 +567,6 @@ public class IndicatorSeekBar extends View {
         }
     }
 
-    /*private void drawThumbText(Canvas canvas) {
-        if (!mShowThumbText || (mShowTickText && mTicksCount > 2)) {
-            return;
-        }
-        mTextPaint.setColor(mThumbTextColor);
-        canvas.drawText(getProgressString(mProgress), getThumbCenterX(), mThumbTextY, mTextPaint);
-    }*/
-
     private float getThumbCenterX() {
         if (mR2L) {
             return mBackgroundTrack.right;
@@ -661,20 +587,6 @@ public class IndicatorSeekBar extends View {
         }
         return mUnSelectedTickMarksColor;
     }
-
-    /*private int getLeftSideTickTextsColor() {
-        if (mR2L) {
-            return mUnselectedTextsColor;
-        }
-        return mSelectedTextsColor;
-    }
-
-    private int getRightSideTickTextsColor() {
-        if (mR2L) {
-            return mSelectedTextsColor;
-        }
-        return mUnselectedTextsColor;
-    }*/
 
     /**
      * get the track size which on the thumb left in R2L/L2R case.
@@ -749,27 +661,6 @@ public class IndicatorSeekBar extends View {
         return bitmap;
     }
 
-    /**
-     * initial the color for the thumb.
-     * <p>
-     * <p>
-     * NOTICE: make sure the format of color selector you set is right.
-     * int[][] states = colorStateList.getStates();
-     * (1) if the states.length == 1,the way you set the thumb color like :
-     * app:isb_thumb_color="#XXXXXX"  or
-     * app:isb_thumb_color="@color/color_name" ;
-     * <p>
-     * (2) if the states.length == 3,the way you set the thumb color like :
-     * app:isb_thumb_color="@color/selector_color_file_name". the file(located at res/color/)'s format should like:
-     * <p>
-     * <?xml version="1.0" encoding="utf-8"?>
-     * <selector xmlns:android="http://schemas.android.com/apk/res/android">
-     * <item android:color="#555555" android:state_pressed="true" />  <!--this color is for thumb which is at pressing status-->
-     * <item android:color="#555555"/>                                <!--for thumb which is at normal status-->
-     * </selector>
-     * <p>
-     * (3) if the states.length == other, the color's format you set is not support.
-     */
     private void initThumbColor(ColorStateList colorStateList, int defaultColor) {
         //if you didn't set the thumb color, set a default color.
         if (colorStateList == null) {
@@ -820,30 +711,8 @@ public class IndicatorSeekBar extends View {
             //the color selector file was set by a wrong format , please see above to correct.
             throw new IllegalArgumentException("the selector color file you set for the argument: isb_thumb_color is in wrong format.");
         }
-
     }
 
-    /**
-     * initial the color for the tick masks
-     * <p>
-     * <p>
-     * NOTICE: make sure the format of color selector you set is right.
-     * int[][] states = colorStateList.getStates();
-     * (1) if the states.length == 1,the way you set the tick marks' color like :
-     * app:isb_tick_marks_color="#XXXXXX"  or
-     * app:isb_tick_marks_color="@color/color_name" ;
-     * <p>
-     * (2) if the states.length == 2,the way you set the tick marks' color like :
-     * app:isb_tick_marks_color="@color/selector_color_file_name". the file(located at res/color/)'s format should like:
-     * <p>
-     * <?xml version="1.0" encoding="utf-8"?>
-     * <selector xmlns:android="http://schemas.android.com/apk/res/android">
-     * <item android:color="#555555" android:state_selected="true" />  <!--this color is for marks those are at left side of thumb-->
-     * <item android:color="#555555"/>                                 <!--for marks those are at right side of thumb-->
-     * </selector>
-     * <p>
-     * (3) if the states.length == other, the way you set is not support.
-     */
     private void initTickMarksColor(ColorStateList colorStateList, int defaultColor) {
         //if you didn't set the tick's text color, set a default selector color file.
         if (colorStateList == null) {
@@ -896,28 +765,6 @@ public class IndicatorSeekBar extends View {
         }
     }
 
-    /**
-     * initial the color for the tick texts.
-     * <p>
-     * <p>
-     * NOTICE: make sure the format of color selector you set is right.
-     * int[][] states = colorStateList.getStates();
-     * (1) if the states.length == 1,the way you set the tick texts' color like :
-     * app:isb_tick_text_color="#XXXXXX"  or
-     * app:isb_tick_text_color="@color/color_name" ;
-     * <p>
-     * (2) if the states.length == 3,the way you set the tick texts' color like :
-     * app:isb_tick_text_color="@color/selector_color_file_name". the file(located at res/color/)'s format should like:
-     * <p>
-     * <?xml version="1.0" encoding="utf-8"?>
-     * <selector xmlns:android="http://schemas.android.com/apk/res/android">
-     * <item android:color="#555555" android:state_selected="true" />  <!--this color is for texts those are at left side of thumb-->
-     * <item android:color="#FF4081" android:state_hovered="true" />     <!--for thumb text-->
-     * <item android:color="#555555"/>                                 <!--for texts those are at right side of thumb-->
-     * </selector>
-     * <p>
-     * (3) if the states.length == other, the way you set is not support.
-     */
     private void initTickTextsColor(ColorStateList colorStateList, int defaultColor) {
         //if you didn't set the tick's texts color, will be set a selector color file default.
         if (colorStateList == null) {
@@ -1006,24 +853,6 @@ public class IndicatorSeekBar extends View {
         }
     }
 
-    /**
-     * initial the bitmap for the thumb.
-     * <p>
-     * <p>
-     * NOTICE: make sure the format of drawable selector file you set is right.
-     * int stateCount = listDrawable.getStateCount();
-     * (1) if the drawable instanceof BitmapDrawable,the way you set like :
-     * app:isb_thumb_drawable="@drawable/ic_launcher"
-     * <p>
-     * (2) if the drawable instanceof StateListDrawable,the way you set like :
-     * app:isb_thumb_drawable="@drawable/selector_thumb_drawable". the file(located at res/drawable/)'s format should like:
-     * <p>
-     * <?xml version="1.0" encoding="utf-8"?>
-     * <selector xmlns:android="http://schemas.android.com/apk/res/android">
-     * <item android:drawable="@drawable/ic_launcher" android:state_pressed="true" />  <!--this drawable is for thumb when pressing-->
-     * <item android:drawable="@drawable/ic_launcher_round" />  <!--for thumb when normal-->
-     * </selector>
-     */
     private void initThumbBitmap() {
         if (mThumbDrawable == null) {
             return;
@@ -1065,24 +894,6 @@ public class IndicatorSeekBar extends View {
         }
     }
 
-    /**
-     * initial the bitmap for the thickMarks.
-     * <p>
-     * <p>
-     * NOTICE: make sure the format of drawable selector file you set is right.
-     * int stateCount = listDrawable.getStateCount();
-     * (1) if the drawable instanceof BitmapDrawable,the way you set like :
-     * app:isb_tick_marks_drawable="@drawable/ic_launcher"
-     * <p>
-     * (2) if the drawable instanceof StateListDrawable,the way you set like :
-     * app:isb_tick_marks_drawable="@drawable/selector_thumb_drawable". the file(located at res/drawable/)'s format should like:
-     * <p>
-     * <?xml version="1.0" encoding="utf-8"?>
-     * <selector xmlns:android="http://schemas.android.com/apk/res/android">
-     * <item android:drawable="@drawable/ic_launcher" android:state_selected="true" />  <!--this drawable is for thickMarks which thumb swept-->
-     * <item android:drawable="@drawable/ic_launcher_round" />  <!--for thickMarks which thumb haven't reached-->
-     * </selector>
-     */
     private void initTickMarksBitmap() {
         if (mTickMarksDrawable instanceof StateListDrawable) {
             StateListDrawable listDrawable = (StateListDrawable) mTickMarksDrawable;
@@ -1120,7 +931,6 @@ public class IndicatorSeekBar extends View {
             mUnselectTickMarksBitmap = getDrawBitmap(mTickMarksDrawable, false);
             mSelectTickMarksBitmap = mUnselectTickMarksBitmap;
         }
-
     }
 
     @Override
@@ -1159,15 +969,15 @@ public class IndicatorSeekBar extends View {
         if (parent == null) {
             return super.dispatchTouchEvent(event);
         }
-        switch (event.getAction()) {
-            case MotionEvent.ACTION_DOWN:
-                parent.requestDisallowInterceptTouchEvent(true);
-                break;
-            case MotionEvent.ACTION_UP:
-            case MotionEvent.ACTION_CANCEL:
-                parent.requestDisallowInterceptTouchEvent(false);
-                break;
-        }
+//        switch (event.getAction()) {
+//            case MotionEvent.ACTION_DOWN:
+//                parent.requestDisallowInterceptTouchEvent(true);
+//                break;
+//            case MotionEvent.ACTION_UP:
+//            case MotionEvent.ACTION_CANCEL:
+//                parent.requestDisallowInterceptTouchEvent(false);
+//                break;
+//        }
         return super.dispatchTouchEvent(event);
     }
 
@@ -1186,12 +996,12 @@ public class IndicatorSeekBar extends View {
 
     @Override
     protected void onRestoreInstanceState(Parcelable state) {
-        if (state instanceof Bundle) {
-            Bundle bundle = (Bundle) state;
-            setProgress(bundle.getFloat("isb_progress"));
-            super.onRestoreInstanceState(bundle.getParcelable("isb_instance_state"));
-            return;
-        }
+//        if (state instanceof Bundle) {
+//            Bundle bundle = (Bundle) state;
+//            setProgress(bundle.getFloat("isb_progress"));
+//            super.onRestoreInstanceState(bundle.getParcelable("isb_instance_state"));
+//            return;
+//        }
         super.onRestoreInstanceState(state);
     }
 
@@ -1202,7 +1012,7 @@ public class IndicatorSeekBar extends View {
         }
         switch (event.getAction()) {
             case MotionEvent.ACTION_DOWN:
-                performClick();
+//                performClick();
                 float mX = event.getX();
                 if (isTouchSeekBar(mX, event.getY())) {
                     if ((mOnlyThumbDraggable && !isTouchThumb(mX))) {
@@ -1334,7 +1144,6 @@ public class IndicatorSeekBar extends View {
                     mIndicatorTopContentView);
             this.mIndicatorContentView = mIndicator.getInsideContentView();
         }
-
     }
 
     private void updateStayIndicator() {
@@ -1438,6 +1247,7 @@ public class IndicatorSeekBar extends View {
         }
         if (progressChange()) {
             mSeekChangeListener.onSeeking(collectParams(formUser));
+            playClickSound();
         }
     }
 
@@ -1662,14 +1472,14 @@ public class IndicatorSeekBar extends View {
      *
      * @param min the min value , if is larger than max, will set to max.
      */
-    public synchronized void setMin(float min) {
-        this.mMin = Math.min(mMax, min);
-        initProgressRangeValue();
-        collectTicksInfo();
-        refreshSeekBarLocation();
-        invalidate();
-        updateStayIndicator();
-    }
+//    public synchronized void setMin(float min) {
+//        this.mMin = Math.min(mMax, min);
+//        initProgressRangeValue();
+//        collectTicksInfo();
+//        refreshSeekBarLocation();
+//        invalidate();
+//        updateStayIndicator();
+//    }
 
     /**
      * compat app local change

@@ -57,7 +57,7 @@
                 app:isb_thumb_drawable="@drawable/thumb"
                 app:isb_thumb_size="36dp"
                 app:isb_tick_marks_drawable="@drawable/tick_mark"
-                app:isb_ticks_count="10" />
+                app:isb_ticks_count="16" />
 
         </com.saiyi.dangweiwidget.IndicatorStayLayout>
 
